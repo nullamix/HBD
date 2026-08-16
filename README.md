@@ -5,8 +5,7 @@ A static birthday page for GitHub Pages.
 Use either URL shape:
 
 ```text
-/hbd/sunny
-/hbd?n=sunny
+/hbd/your_name
+/hbd?n=your_name
+/hbd/?n=your_name
 ```
-
-`index.html` handles query-string names. `404.html` mirrors the same app so GitHub Pages can render path-style names like `/hbd/sunny`.
