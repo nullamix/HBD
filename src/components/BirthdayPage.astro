@@ -42,7 +42,7 @@ const defaultName = "Friend";
     <aside class="meter" aria-label="Birthday joy meter">
       <div class="meter-row">
         <span>Joy meter</span>
-        <span id="score">0 pops</span>
+        <span id="score">0 / 10 pops</span>
       </div>
       <div class="track"><div id="fill" class="fill"></div></div>
     </aside>
@@ -79,8 +79,10 @@ const defaultName = "Friend";
       const canvas = document.querySelector(".confetti");
       const ctx = canvas.getContext("2d");
       const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const scoreGoal = 10;
 
       let score = 0;
+      let finalePlayed = false;
       let audioContext;
       let confetti = [];
       let balloonTimer;
@@ -158,9 +160,10 @@ const defaultName = "Friend";
         balloon.style.setProperty("--float", `${duration}s`);
         balloon.innerHTML = '<span class="balloon-body"></span><span class="string"></span>';
 
-        const pop = (event) => popBalloon(balloon, event);
-        balloon.addEventListener("pointerenter", pop, { once: true });
-        balloon.addEventListener("pointerdown", pop, { once: true });
+        balloon.addEventListener("pointerenter", (event) => {
+          if (event.pointerType === "mouse") popBalloon(balloon, event);
+        });
+        balloon.addEventListener("click", (event) => popBalloon(balloon, event), { once: true });
         balloon.addEventListener("animationend", () => balloon.remove());
         layer.appendChild(balloon);
       }
@@ -189,11 +192,44 @@ const defaultName = "Friend";
           showToast(milestones[(score / 5 - 1) % milestones.length]);
           for (let i = 0; i < 5; i += 1) setTimeout(spawnBalloon, i * 95);
         }
+
+        if (score >= scoreGoal && !finalePlayed) {
+          finalePlayed = true;
+          launchFinale();
+        }
       }
 
       function updateScore() {
-        scoreEl.textContent = `${score} ${score === 1 ? "pop" : "pops"}`;
-        fillEl.style.width = `${Math.min(100, score * 8)}%`;
+        scoreEl.textContent = score >= scoreGoal
+          ? `${score} pops · MAX!`
+          : `${score} / ${scoreGoal} ${score === 1 ? "pop" : "pops"}`;
+        fillEl.style.width = `${Math.min(100, (score / scoreGoal) * 100)}%`;
+      }
+
+      function launchFinale() {
+        document.body.classList.add("finale");
+        showToast(`🎉 Maximum birthday joy unlocked for ${nameEl.textContent}!`);
+
+        const bursts = [
+          [0.16, 0.28],
+          [0.5, 0.18],
+          [0.84, 0.3],
+          [0.3, 0.56],
+          [0.7, 0.54]
+        ];
+
+        bursts.forEach(([x, y], index) => {
+          setTimeout(() => {
+            const color = colors[index % colors.length];
+            const burstX = window.innerWidth * x;
+            const burstY = window.innerHeight * y;
+            burstStars(burstX, burstY, color);
+            addConfetti(burstX, burstY, color);
+          }, index * 180);
+        });
+
+        for (let i = 0; i < 12; i += 1) setTimeout(spawnBalloon, i * 110);
+        setTimeout(() => document.body.classList.remove("finale"), 4200);
       }
 
       function burstStars(x, y, color) {
@@ -672,6 +708,39 @@ const defaultName = "Friend";
     transform: translate(-50%, 0);
   }
 
+  body::after {
+    position: fixed;
+    inset: 0;
+    z-index: 5;
+    background:
+      radial-gradient(circle at 18% 24%, rgba(255, 189, 61, 0.48), transparent 25%),
+      radial-gradient(circle at 82% 28%, rgba(249, 79, 143, 0.42), transparent 27%),
+      radial-gradient(circle at 50% 70%, rgba(63, 140, 255, 0.32), transparent 34%);
+    content: "";
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  body.finale::after {
+    animation: finale-flash 4.2s ease-out forwards;
+  }
+
+  body.finale .stage {
+    animation: finale-stage 760ms cubic-bezier(0.18, 0.9, 0.22, 1.25) 2 alternate;
+  }
+
+  body.finale .cake {
+    animation: finale-cake 520ms ease-in-out 5 alternate;
+  }
+
+  body.finale .meter {
+    animation: finale-meter 680ms ease-in-out 3;
+  }
+
+  body.finale .fill {
+    box-shadow: 0 0 22px rgba(249, 79, 143, 0.72);
+  }
+
   @keyframes flame {
     from {
       transform: translateX(-50%) rotate(-4deg) scale(0.92);
@@ -724,6 +793,38 @@ const defaultName = "Friend";
     to {
       transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(210deg) scale(0);
       opacity: 0;
+    }
+  }
+
+  @keyframes finale-flash {
+    0%,
+    100% {
+      opacity: 0;
+    }
+    16%,
+    72% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes finale-stage {
+    to {
+      transform: translateY(-1vh) scale(1.06) rotate(-1deg);
+    }
+  }
+
+  @keyframes finale-cake {
+    to {
+      transform: translateY(-18px) rotate(5deg) scale(1.12);
+    }
+  }
+
+  @keyframes finale-meter {
+    25% {
+      transform: rotate(-2deg) scale(1.04);
+    }
+    75% {
+      transform: rotate(2deg) scale(1.04);
     }
   }
 
