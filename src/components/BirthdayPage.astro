@@ -27,7 +27,7 @@ const defaultName = "Friend";
           <i></i>
           <span></span>
         </div>
-        <p class="kicker">Birthday weather</p>
+        <p class="kicker">Hover over or tap a balloon to pop it</p>
         <h1>
           Happy Birthday
           <span id="birthdayName" class="name">{defaultName}</span>
@@ -158,12 +158,16 @@ const defaultName = "Friend";
         balloon.style.setProperty("--float", `${duration}s`);
         balloon.innerHTML = '<span class="balloon-body"></span><span class="string"></span>';
 
-        balloon.addEventListener("pointerdown", (event) => popBalloon(balloon, event), { once: true });
+        const pop = (event) => popBalloon(balloon, event);
+        balloon.addEventListener("pointerenter", pop, { once: true });
+        balloon.addEventListener("pointerdown", pop, { once: true });
         balloon.addEventListener("animationend", () => balloon.remove());
         layer.appendChild(balloon);
       }
 
       function popBalloon(balloon, event) {
+        if (balloon.classList.contains("popped")) return;
+
         event.preventDefault();
         unlockAudio();
 
